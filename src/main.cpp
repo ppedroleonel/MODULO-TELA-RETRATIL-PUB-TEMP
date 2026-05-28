@@ -1,9 +1,9 @@
-/**
+/** 
  *   Nome: Pedro Leonel de Lorena, Leonardo Ferrarese Correa, Lais Rodrigues Sevilhano & Luigi Arnosti Reginato
  *  Descrição: Neste modulo de publish nos coletamos os hex do controle remoto e fizemos com que toda vez que apertasse o botao ele emitsse para a tela oq o hex faz.
  *  Projeto: Modulo de publicar os comandos feito na tela retratil
  *  Data: 21/05
- *  Versão: 0.0.5
+ *  Versão: 0.0.6
  */
 
 #include <Arduino.h>
@@ -25,9 +25,9 @@ const int pinPause = 4;
 //=========================
 //* Variaveis globais
 
-String frequenciaUp = "frequenciaUP";
-String frequenciaDown = "frequenciaDOWN";
-String frequenciaPause = "frequenciaPAUSE";
+unsigned long frequenciaUp = 433;
+unsigned long frequenciaDown = 432;
+unsigned long frequenciaPause = 431;
 
 const unsigned long tempoInicio = 0;
 unsigned long tempo = 0;
@@ -35,6 +35,8 @@ unsigned long tempoDecorrido = 0;
 unsigned long tempoPause;
 unsigned long tempoMaximo = 20000;
 bool tempoParado = false;
+
+const char topicoComandoUp[] = "senai134/publisherTelaRetratil/esp32/comando";
 //=========================
 
 //=========================
@@ -51,6 +53,7 @@ Bounce PAUSE = Bounce();
 void botaoUp();
 void botaoDown();
 void botaoPause();
+void postarComando();
 
 //=========================
 
@@ -58,8 +61,11 @@ void setup()
 {
   //=========================
   //* pinMODE
+ // UP.attach(pinUp, INPUT_PULLUP);
+ // DOWN.attach(pinDown, INPUT_PULLUP);
+  //PAUSE.attach(pinPause, INPUT_PULLUP);
   pinMode(pinUp, INPUT_PULLUP);
-  pinMode(pinDown, INPUT_PULLUP); 
+  pinMode(pinDown, INPUT_PULLUP);
   pinMode(pinPause, INPUT_PULLUP);
   //=========================
 
@@ -75,6 +81,11 @@ void loop()
   garantirMQTTConectado();
   loopMQTT();
 
+  UP.update();
+  DOWN.update();
+  PAUSE.update();
+
+  //TODO: TROCAR OS IFS DO BOTAO PARA OQ VAI VIM DO OUTRO JSON POIS ELE VAI FALAR SE FOI PRESSIONADO OU NAO.
   if (UP.fell())
   {
     botaoUp();
@@ -86,6 +97,7 @@ void loop()
   if (PAUSE.fell())
   {
     botaoPause();
+
   }
   
 }
@@ -96,54 +108,49 @@ void loop()
 */
 void botaoUp()
 {
-  if (frequenciaUp == "")
+  if (frequenciaUp != 433)
     debugErro("A frequência do botão UP está errada, favor checar se está correta");
 
-  if (frequenciaUp == "frequencia do botão UP")
+  if (frequenciaUp == 433)
   {
     if (tempoParado)
     {
       debugInfo("Tela retrátil subindo");
       tempo = millis() - tempoPause;
       tempoParado = false;
-
       // Serial para debug
     debugInfo("Tempo decorrido: " + String(tempoDecorrido) + " ms");
     }
     tempoDecorrido = millis() - tempo;
 
-    if (tempoDecorrido>= tempoMaximo)
+    if (tempoDecorrido >= tempoMaximo)
     {
       debugInfo("Tela retrátil subiu por completo.");
       tempoDecorrido = 0;
       tempoParado = false;
     }
   }
-  //TODO: PUBLICAR O JSON DO BOTAO UP NO MQTT
-
 }
 
 void botaoPause()
 {
-  if (frequenciaPause == "")
+  if (frequenciaPause != 431)
     debugErro("A frequência do botão Pause está errada, favor checar se está correta");
 
-  if (frequenciaPause == "frequencia do botão PAUSE")
+  if (frequenciaPause == 431)
   {
     debugInfo("Tela retrátil pausada");
     tempoParado = true;
     tempoPause = tempoDecorrido;
-
   }
-  //TODO: PUBLICAR O JSON DO BOTAO PAUSE NO MQTT
 }
 
 void botaoDown()
 {
-  if (frequenciaDown == "")
+  if (frequenciaDown != 432)
     debugErro("A frequência do botão DOWN está errada, favor checar se está correta");
 
-  if (frequenciaDown == "frequencia do botão DOWN")
+  if (frequenciaDown == 432)
   {
     if (tempoParado)
     {
@@ -163,5 +170,4 @@ void botaoDown()
       tempoParado = false;
     }
   }
-  //TODO: PUBLICAR O JSON DO BOTAO DOWN NO MQTT
 }
